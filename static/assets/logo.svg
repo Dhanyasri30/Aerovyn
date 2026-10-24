@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <defs>
+    <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <linearGradient id="shield-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+  </defs>
+  <!-- Shield outline -->
+  <path d="M24 4L7 11V22C7 32.8 14.2 42.4 24 45C33.8 42.4 41 32.8 41 22V11L24 4Z" fill="url(#shield-grad)" stroke="#38bdf8" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Automotive silhouette lines -->
+  <path d="M14 26C16 23 20 22 24 22C28 22 32 23 34 26" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Sensor wave / air quality pulses -->
+  <path d="M17 18C19 16.5 21.5 15.5 24 15.5C26.5 15.5 29 16.5 31 18" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="24" cy="11.5" r="2" fill="#38bdf8"/>
+  <!-- Gas particle / safety pulse dots -->
+  <circle cx="16" cy="31" r="2.2" fill="#22c55e"/>
+  <circle cx="24" cy="33" r="2.2" fill="#38bdf8"/>
+  <circle cx="32" cy="31" r="2.2" fill="#f59e0b"/>
+  <!-- Connecting line -->
+  <path d="M16 31L24 33L32 31" stroke="#475569" stroke-width="1.5" stroke-dasharray="2 2"/>
+</svg>
