@@ -39,6 +39,14 @@ class AutoSenseApp {
     this.bindEvents();
     this.updateSettingsForm();
 
+    // 4. Initialize Active Tab / View from URL hash or default to dashboard
+    const initialHash = window.location.hash.replace('#', '');
+    if (['dashboard', 'telemetry', 'oled', 'alerts'].includes(initialHash)) {
+      this.switchView(initialHash, false);
+    } else {
+      this.switchView('dashboard', false);
+    }
+
     console.info('[AutoSense] System initialized in Standby mode.');
   }
 
@@ -161,11 +169,86 @@ class AutoSenseApp {
       });
     });
 
+    // Tabbed Navigation View Switching
+    const navLinks = document.querySelectorAll('.nav-link[data-view]');
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetView = link.getAttribute('data-view');
+        this.switchView(targetView);
+      });
+    });
+
+    // Listen for browser back/forward or hash changes
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (['dashboard', 'telemetry', 'oled', 'alerts'].includes(hash)) {
+        this.switchView(hash, false);
+      }
+    });
+
     // Close modals on clicking backdrop
     window.addEventListener('click', (e) => {
       if (e.target === settingsModal) settingsModal.classList.remove('open');
       if (e.target === helpModal) helpModal.classList.remove('open');
     });
+  }
+
+  /**
+   * Switch between Dashboard, Live Telemetry, OLED Mirror, and Alerts views
+   */
+  switchView(viewName, updateHash = true) {
+    const validViews = ['dashboard', 'telemetry', 'oled', 'alerts'];
+    const activeView = validViews.includes(viewName) ? viewName : 'dashboard';
+
+    // Update active state on nav links
+    const navLinks = document.querySelectorAll('.nav-link[data-view]');
+    navLinks.forEach(link => {
+      if (link.getAttribute('data-view') === activeView) {
+        link.classList.add('active');
+        link.setAttribute('aria-selected', 'true');
+      } else {
+        link.classList.remove('active');
+        link.setAttribute('aria-selected', 'false');
+      }
+    });
+
+    // Toggle view containers
+    const views = {
+      dashboard: document.getElementById('viewDashboard'),
+      telemetry: document.getElementById('viewTelemetry'),
+      oled: document.getElementById('viewOled'),
+      alerts: document.getElementById('viewAlerts')
+    };
+
+    Object.entries(views).forEach(([name, el]) => {
+      if (el) {
+        if (name === activeView) {
+          el.style.display = 'block';
+          el.classList.add('active-view');
+        } else {
+          el.style.display = 'none';
+          el.classList.remove('active-view');
+        }
+      }
+    });
+
+    // When switching to telemetry, resize chart canvases
+    if (activeView === 'telemetry' && this.charts) {
+      setTimeout(() => this.charts.resize(), 50);
+    }
+
+    if (updateHash && window.location.hash !== '#' + activeView) {
+      window.location.hash = '#' + activeView;
+    }
+
+    // Smoothly scroll down towards view area if user is lower on the page
+    const mainEl = document.querySelector('.main-content');
+    if (mainEl && window.pageYOffset > 100) {
+      const yOffset = -80;
+      const y = mainEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+    }
   }
 
   /**

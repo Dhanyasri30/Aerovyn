@@ -309,4 +309,15 @@ class ChartController {
     const elHum = document.getElementById('chartHumVal');
     if (elHum) elHum.textContent = '-- % RH';
   }
+
+  /**
+   * Recalculate dimensions for all charts (useful after tab or view switch)
+   */
+  resize() {
+    Object.values(this.charts).forEach(c => {
+      if (c && typeof c.resize === 'function') {
+        c.resize();
+      }
+    });
+  }
 }

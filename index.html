@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="AutoSense — Smart Automotive Gas, Smoke, and Cabin Air-Quality Monitoring System with Web Serial API telemetry and autonomous OLED alarm.">
-  <meta name="theme-color" content="#070b14">
+  <meta name="theme-color" content="#ffffff">
   <title>AutoSense — Smart Automotive Gas, Smoke & Air-Quality Dashboard</title>
 
   <!-- Google Fonts: Outfit (Headings), Inter (Body) & JetBrains Mono (Telemetry) -->
@@ -28,31 +28,28 @@
           <img src="static/assets/logo.svg" alt="AutoSense Logo" class="brand-logo" width="28" height="28">
         </div>
         <div class="brand-title-wrap">
-          <div class="brand-title">
-            AutoSense
-            <span class="brand-badge">Uno v2.0 Pro</span>
-          </div>
+          <div class="brand-title">AutoSense</div>
           <span class="brand-subtitle">Smart Automotive Gas, Smoke & Air Monitoring</span>
         </div>
       </div>
 
       <nav class="header-nav" aria-label="Main Navigation">
-        <a href="#dashboard" class="nav-link active" id="navDashboard">
+        <button type="button" class="nav-link active" data-view="dashboard" id="navDashboard" title="Overview of all automotive telemetry">
           <img src="static/assets/icons/dashboard.svg" class="nav-icon" alt="" aria-hidden="true">
           <span>Dashboard</span>
-        </a>
-        <a href="#liveMonitoring" class="nav-link" id="navMonitoring">
+        </button>
+        <button type="button" class="nav-link" data-view="telemetry" id="navMonitoring" title="Real-time rolling sensor telemetry graphs">
           <img src="static/assets/icons/activity.svg" class="nav-icon" alt="" aria-hidden="true">
           <span>Live Telemetry</span>
-        </a>
-        <a href="#oledMirrorSection" class="nav-link" id="navOled">
+        </button>
+        <button type="button" class="nav-link" data-view="oled" id="navOled" title="Hardware mirror of Arduino SSD1306 OLED display">
           <img src="static/assets/icons/cpu.svg" class="nav-icon" alt="" aria-hidden="true">
           <span>OLED Mirror</span>
-        </a>
-        <a href="#alertHistory" class="nav-link" id="navAlertHistory">
+        </button>
+        <button type="button" class="nav-link" data-view="alerts" id="navAlertHistory" title="Threshold breach incidents and historical logs">
           <img src="static/assets/icons/history.svg" class="nav-icon" alt="" aria-hidden="true">
           <span>Alerts & History</span>
-        </a>
+        </button>
       </nav>
 
       <div class="header-actions">
@@ -95,7 +92,7 @@
   <!-- Quick Scenario Simulation Toolbar (Instant Alarm Testing) -->
   <aside class="scenario-bar" aria-label="Quick Test Scenarios">
     <div class="scenario-title-wrap">
-      <img src="static/assets/icons/activity.svg" width="16" height="16" alt="" style="color: #38bdf8;">
+      <img src="static/assets/icons/activity.svg" width="16" height="16" alt="" style="color: #0284c7;">
       <span>Interactive Alarm Testing:</span>
     </div>
     <div class="scenario-chips-grid">
@@ -117,12 +114,12 @@
     </div>
   </aside>
 
-  <!-- Real-Time Warning & Notification Banner -->
-  <div class="alert-banner state-offline" id="alertBanner" role="alert">
+  <!-- Real-Time Emergency Warning Banner (Hidden during normal/standby state; activates only during alarms) -->
+  <div class="alert-banner" id="alertBanner" role="alert" style="display: none;">
     <div class="banner-content">
       <div class="banner-text-group">
         <img src="static/assets/icons/info.svg" class="banner-icon" id="bannerIcon" alt="Alert status">
-        <span id="bannerMessage">System standby. Connect Arduino Uno via USB Serial to begin telemetry reception.</span>
+        <span id="bannerMessage"></span>
       </div>
       <button type="button" class="banner-btn-ack" id="bannerAckBtn" style="display: none;">
         Acknowledge Alert
@@ -130,427 +127,528 @@
     </div>
   </div>
 
-  <!-- Main Content Container -->
-  <main class="main-content" id="dashboard">
-
-    <!-- Prototype & Safety Disclaimer Notice -->
-    <aside class="safety-callout" role="note">
-      <img src="static/assets/icons/shield.svg" class="safety-callout-icon" alt="Safety shield">
-      <div>
-        <strong>AutoSense Safety Architecture:</strong> Real-time automotive environmental protection monitor.
-        When sensor levels exceed configured safety thresholds, the system triggers audio-visual alarms directly on the
-        <strong>SSD1306 OLED screen</strong>, <strong>Pin D8 audio buzzer</strong>, and throughout the <strong>live web application</strong>.
-      </div>
-    </aside>
-
-    <!-- Top Dashboard Header with Actions -->
-    <div class="section-header">
-      <div class="section-title-wrap">
-        <h1 class="section-title">Telemetry Overview</h1>
-        <span class="section-badge" id="telemetryRateBadge">1.0 Hz Rate</span>
-        <span class="section-badge" id="demoModeBadge" style="display: none; background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3);">SIMULATED STREAM</span>
-      </div>
-      <div class="section-actions">
-        <button type="button" class="btn btn-outline" id="exportCsvBtn" title="Export recorded sensor telemetry to CSV">
-          <img src="static/assets/icons/download.svg" class="btn-icon" alt="">
-          <span>Export CSV</span>
-        </button>
-      </div>
-    </div>
+  <!-- Main Content Container with Tabbed View Switching -->
+  <main class="main-content">
 
     <!-- ======================================================================
-         Dashboard Cards Grid
+         VIEW 1: DASHBOARD OVERVIEW
          ====================================================================== -->
-    <div class="cards-grid">
-
-      <!-- CARD A: Overall System Status -->
-      <article class="card card-system-status" id="cardSystemStatus">
-        <div class="card-header">
-          <div class="card-title-group">
-            <div class="card-icon-wrap">
-              <img src="static/assets/icons/shield.svg" width="18" height="18" alt="">
-            </div>
-            <h2 class="card-title">Overall System Status</h2>
-          </div>
-          <span class="card-status-pill pill-offline" id="systemStatusPill">OFFLINE</span>
-        </div>
-        <div class="card-body">
-          <div class="system-status-indicator">
-            <div class="system-status-badge-lg pill-offline" id="systemStatusBadgeLg">
-              <span id="systemStatusText">OFFLINE</span>
-            </div>
-            <div class="system-status-desc" id="systemStatusDesc">
-              System is currently in standby. Connect the Arduino Uno using the USB button above to stream live telemetry.
-            </div>
-          </div>
-          <!-- Arduino Local OLED & Buzzer Hardware Mirrors -->
-          <div class="hw-indicators-grid" title="State of physical Arduino output indicators">
-            <div class="hw-indicator-item">
-              <span class="hw-led-dot active-green" id="hwOledStatus"></span>
-              <span>SSD1306 OLED (Active)</span>
-            </div>
-            <div class="hw-indicator-item">
-              <span class="hw-led-dot" id="hwBuzzer"></span>
-              <span>D8 Buzzer (Audio Unit)</span>
-            </div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-footer-note">Autonomous local OLED & Buzzer alarm enabled</span>
-          <span id="lastHeartbeatTime">Last update: --</span>
-        </div>
-      </article>
-
-      <!-- CARD B: Arduino Connection Telemetry -->
-      <article class="card card-connection" id="cardConnection">
-        <div class="card-header">
-          <div class="card-title-group">
-            <div class="card-icon-wrap">
-              <img src="static/assets/icons/cpu.svg" width="18" height="18" alt="">
-            </div>
-            <h2 class="card-title">Arduino Link Health</h2>
-          </div>
-          <span class="card-status-pill pill-offline" id="serialStatePill">DISCONNECTED</span>
-        </div>
-        <div class="card-body">
-          <div class="conn-details-list">
-            <div class="conn-detail-box">
-              <span class="conn-detail-label">Hardware Controller</span>
-              <span class="conn-detail-val" id="deviceModelText">Arduino Uno (ATmega328P)</span>
-            </div>
-            <div class="conn-detail-box">
-              <span class="conn-detail-label">Baud Rate & Port</span>
-              <span class="conn-detail-val" id="serialBaudPortText">115200 bps &bull; No Port</span>
-            </div>
-            <div class="conn-detail-box">
-              <span class="conn-detail-label">Packets / Integrity</span>
-              <span class="conn-detail-val" id="packetCountText">0 pkts &bull; 0 err</span>
-            </div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-footer-note">Protocol: Newline JSON Stream</span>
-          <span id="packetLatencyText">Watchdog: Inactive</span>
-        </div>
-      </article>
-
-      <!-- CARD C: MQ-2 Smoke & Combustible Gas -->
-      <article class="card" id="cardMq2">
-        <div class="card-header">
-          <div class="card-title-group">
-            <div class="card-icon-wrap" style="color: #f59e0b;">
-              <img src="static/assets/icons/flame.svg" width="18" height="18" alt="">
-            </div>
-            <h2 class="card-title">MQ-2 Smoke & Gas</h2>
-          </div>
-          <span class="card-status-pill pill-offline" id="mq2StatusPill">N/A</span>
-        </div>
-        <div class="card-body">
-          <div class="telemetry-primary">
-            <span class="telemetry-num" id="mq2Val">--</span>
-            <span class="telemetry-unit">Level</span>
-          </div>
-          <div class="telemetry-secondary">
-            <span>Analog Voltage:</span>
-            <span class="telemetry-subval" id="mq2VoltVal">-- V</span>
-          </div>
-          <div class="telemetry-progress-track">
-            <div class="telemetry-progress-bar bar-safe" id="mq2ProgressBar" style="width: 0%;"></div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-footer-note">Pin A0 &bull; Smoke & Hydrocarbon</span>
-          <span id="mq2ThresholdNote">Warn: 380 | Crit: 580</span>
-        </div>
-      </article>
-
-      <!-- CARD D: MQ-135 General Air Quality & Toxic Gas -->
-      <article class="card" id="cardMq135">
-        <div class="card-header">
-          <div class="card-title-group">
-            <div class="card-icon-wrap" style="color: #06b6d4;">
-              <img src="static/assets/icons/wind.svg" width="18" height="18" alt="">
-            </div>
-            <h2 class="card-title">MQ-135 Air Quality</h2>
-          </div>
-          <span class="card-status-pill pill-offline" id="mq135StatusPill">N/A</span>
-        </div>
-        <div class="card-body">
-          <div class="telemetry-primary">
-            <span class="telemetry-num" id="mq135Val">--</span>
-            <span class="telemetry-unit">Level</span>
-          </div>
-          <div class="telemetry-secondary">
-            <span>Analog Voltage:</span>
-            <span class="telemetry-subval" id="mq135VoltVal">-- V</span>
-          </div>
-          <div class="telemetry-progress-track">
-            <div class="telemetry-progress-bar bar-safe" id="mq135ProgressBar" style="width: 0%;"></div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-footer-note">Pin A1 &bull; Air Quality & Toxic Gas</span>
-          <span id="mq135ThresholdNote">Warn: 320 | Crit: 520</span>
-        </div>
-      </article>
-
-      <!-- CARD E: Temperature (DHT22) -->
-      <article class="card" id="cardTemp">
-        <div class="card-header">
-          <div class="card-title-group">
-            <div class="card-icon-wrap" style="color: #ef4444;">
-              <img src="static/assets/icons/thermometer.svg" width="18" height="18" alt="">
-            </div>
-            <h2 class="card-title">Cabin Temperature</h2>
-          </div>
-          <span class="card-status-pill pill-offline" id="tempStatusPill">N/A</span>
-        </div>
-        <div class="card-body">
-          <div class="telemetry-primary">
-            <span class="telemetry-num" id="tempVal">--</span>
-            <span class="telemetry-unit" id="tempUnit">°C</span>
-          </div>
-          <div class="telemetry-secondary">
-            <span>Fahrenheit equivalent:</span>
-            <span class="telemetry-subval" id="tempFahrVal">-- °F</span>
-          </div>
-          <div class="telemetry-progress-track">
-            <div class="telemetry-progress-bar bar-safe" id="tempProgressBar" style="width: 0%;"></div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-footer-note">DHT22 Digital Pin D2</span>
-          <span id="tempMinMax">Min: -- | Max: --</span>
-        </div>
-      </article>
-
-      <!-- CARD F: Humidity (DHT22) -->
-      <article class="card" id="cardHum">
-        <div class="card-header">
-          <div class="card-title-group">
-            <div class="card-icon-wrap" style="color: #38bdf8;">
-              <img src="static/assets/icons/droplet.svg" width="18" height="18" alt="">
-            </div>
-            <h2 class="card-title">Cabin Humidity</h2>
-          </div>
-          <span class="card-status-pill pill-offline" id="humStatusPill">N/A</span>
-        </div>
-        <div class="card-body">
-          <div class="telemetry-primary">
-            <span class="telemetry-num" id="humVal">--</span>
-            <span class="telemetry-unit">% RH</span>
-          </div>
-          <div class="telemetry-secondary">
-            <span>Comfort Assessment:</span>
-            <span class="telemetry-subval" id="humComfortVal">Pending data</span>
-          </div>
-          <div class="telemetry-progress-track">
-            <div class="telemetry-progress-bar bar-safe" id="humProgressBar" style="width: 0%;"></div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-footer-note">DHT22 Relative Humidity</span>
-          <span id="humMinMax">Min: -- | Max: --</span>
-        </div>
-      </article>
-
-      <!-- CARD G: Live SSD1306 OLED Screen Hardware Mirror -->
-      <article class="card oled-mirror-card" id="oledMirrorSection">
-        <div class="card-header">
-          <div class="card-title-group">
-            <div class="card-icon-wrap" style="color: #38bdf8;">
-              <img src="static/assets/icons/cpu.svg" width="18" height="18" alt="">
-            </div>
-            <h2 class="card-title">Live SSD1306 OLED Mirror</h2>
-          </div>
-          <span class="card-status-pill pill-safe">128x64 I2C</span>
-        </div>
-        <div class="card-body">
-          <!-- OLED Physical Bezel & Display Screen -->
-          <div class="oled-bezel">
-            <div class="oled-screen-display" id="oledDisplay">
-              <div class="oled-header-bar" id="oledHeader">
-                <span id="oledHeaderTitle">AUTOSENSE</span>
-                <span id="oledHeaderStatus">[ SAFE  ]</span>
-              </div>
-              <div class="oled-body-lines">
-                <div class="oled-line" id="oledLineTemp">Temp : 25.0 C (50%)</div>
-                <div class="oled-line" id="oledLineSmoke">Smoke: 180 (OK)</div>
-                <div class="oled-line" id="oledLineGas">Gas  : 160 (OK)</div>
-              </div>
-              <div class="oled-footer" id="oledFooter">
-                <span id="oledFooterText">AIR QUALITY: NORMAL</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="card-footer-note">Direct visual mirror of Arduino SSD1306 display</span>
-          <span>SDA: A4 &bull; SCL: A5</span>
-        </div>
-      </article>
-
-      <!-- CARD H: Active Sensors & Hardware Health -->
-      <article class="card" id="cardSensors">
-        <div class="card-header">
-          <div class="card-title-group">
-            <div class="card-icon-wrap">
-              <img src="static/assets/icons/cpu.svg" width="18" height="18" alt="">
-            </div>
-            <h2 class="card-title">Sensor Bus Channels</h2>
-          </div>
-          <span class="card-status-pill pill-safe" id="sensorHealthPill">STANDBY</span>
-        </div>
-        <div class="card-body">
-          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem;">
-            <li style="display: flex; justify-content: space-between;">
-              <span style="color: var(--text-secondary);">MQ-2 Gas (A0):</span>
-              <strong id="hwSensorMq2" style="font-family: var(--font-mono); color: var(--text-muted);">Standby</strong>
-            </li>
-            <li style="display: flex; justify-content: space-between;">
-              <span style="color: var(--text-secondary);">MQ-135 Air Quality (A1):</span>
-              <strong id="hwSensorMq135" style="font-family: var(--font-mono); color: var(--text-muted);">Standby</strong>
-            </li>
-            <li style="display: flex; justify-content: space-between;">
-              <span style="color: var(--text-secondary);">DHT22 Temp/Humidity (D2):</span>
-              <strong id="hwSensorDht" style="font-family: var(--font-mono); color: var(--text-muted);">Standby</strong>
-            </li>
-            <li style="display: flex; justify-content: space-between;">
-              <span style="color: var(--text-secondary);">SSD1306 OLED (I2C):</span>
-              <strong id="hwSensorOled" style="font-family: var(--font-mono); color: var(--text-muted);">Standby</strong>
-            </li>
-          </ul>
-        </div>
-        <div class="card-footer">
-          <span class="card-footer-note">4 Channels Active</span>
-          <span class="card-status-pill pill-safe" id="activeAlertCountPill">0 ACTIVE</span>
-        </div>
-      </article>
-
-    </div><!-- /cards-grid -->
-
-    <!-- ======================================================================
-         Live Charts Section
-         ====================================================================== -->
-    <section class="charts-section" id="liveMonitoring">
+    <section class="app-view active-view" id="viewDashboard" aria-label="Dashboard Overview">
+      <!-- Top Dashboard Header with Actions -->
       <div class="section-header">
         <div class="section-title-wrap">
-          <h2 class="section-title">Live Sensor Telemetry History</h2>
-          <span class="section-badge" id="chartWindowBadge">Rolling 40 Samples</span>
+          <h1 class="section-title">Telemetry Overview</h1>
+          <span class="section-badge" id="telemetryRateBadge">1.0 Hz Rate</span>
+          <span class="section-badge" id="demoModeBadge" style="display: none; background: #f5f3ff; color: #7c3aed; border-color: #ddd6fe;">SIMULATED STREAM</span>
         </div>
         <div class="section-actions">
-          <label for="chartWindowSelect" style="font-size: 0.8rem; color: var(--text-secondary); margin-right: 0.25rem;">Window:</label>
-          <select id="chartWindowSelect" class="form-select" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">
-            <option value="20">20 pts</option>
-            <option value="40" selected>40 pts</option>
-            <option value="80">80 pts</option>
-            <option value="150">150 pts</option>
-          </select>
-          <button type="button" class="btn btn-outline" id="clearChartsBtn" title="Clear recorded chart points">
-            <img src="static/assets/icons/refresh.svg" class="btn-icon" alt="">
-            <span>Clear History</span>
+          <button type="button" class="btn btn-outline" id="exportCsvBtn" title="Export recorded sensor telemetry to CSV">
+            <img src="static/assets/icons/download.svg" class="btn-icon" alt="">
+            <span>Export CSV</span>
           </button>
         </div>
       </div>
 
-      <div class="charts-grid" id="analytics">
-        <!-- Chart 1: MQ-2 Gas & Smoke -->
-        <div class="chart-card">
-          <div class="chart-header">
-            <div class="chart-title-group">
-              <img src="static/assets/icons/flame.svg" width="16" height="16" alt="" style="color: #f59e0b;">
-              <h3 class="chart-title">MQ-2 Smoke & Gas Response (A0)</h3>
+      <!-- Dashboard Cards Grid -->
+      <div class="cards-grid">
+
+        <!-- CARD A: Overall System Status -->
+        <article class="card card-system-status" id="cardSystemStatus">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon-wrap">
+                <img src="static/assets/icons/shield.svg" width="18" height="18" alt="">
+              </div>
+              <h2 class="card-title">Overall System Status</h2>
             </div>
-            <div class="chart-current-val" id="chartMq2Val">-- Level (0.00 V)</div>
+            <span class="card-status-pill pill-offline" id="systemStatusPill">OFFLINE</span>
           </div>
-          <div class="chart-container">
-            <canvas id="chartMq2Canvas"></canvas>
+          <div class="card-body">
+            <div class="system-status-indicator">
+              <div class="system-status-badge-lg pill-offline" id="systemStatusBadgeLg">
+                <span id="systemStatusText">OFFLINE</span>
+              </div>
+              <div class="system-status-desc" id="systemStatusDesc">
+                System is currently in standby. Connect the Arduino Uno using the USB button above to stream live telemetry.
+              </div>
+            </div>
+            <!-- Arduino Local OLED & Buzzer Hardware Mirrors -->
+            <div class="hw-indicators-grid" title="State of physical Arduino output indicators">
+              <div class="hw-indicator-item">
+                <span class="hw-led-dot active-green" id="hwOledStatus"></span>
+                <span>SSD1306 OLED (Active)</span>
+              </div>
+              <div class="hw-indicator-item">
+                <span class="hw-led-dot" id="hwBuzzer"></span>
+                <span>D8 Buzzer (Audio Unit)</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-footer-note">Autonomous local OLED & Buzzer alarm enabled</span>
+            <span id="lastHeartbeatTime">Last update: --</span>
+          </div>
+        </article>
+
+        <!-- CARD B: Arduino Connection Telemetry -->
+        <article class="card card-connection" id="cardConnection">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon-wrap">
+                <img src="static/assets/icons/cpu.svg" width="18" height="18" alt="">
+              </div>
+              <h2 class="card-title">Arduino Link Health</h2>
+            </div>
+            <span class="card-status-pill pill-offline" id="serialStatePill">DISCONNECTED</span>
+          </div>
+          <div class="card-body">
+            <div class="conn-details-list">
+              <div class="conn-detail-box">
+                <span class="conn-detail-label">Hardware Controller</span>
+                <span class="conn-detail-val" id="deviceModelText">Arduino Uno (ATmega328P)</span>
+              </div>
+              <div class="conn-detail-box">
+                <span class="conn-detail-label">Baud Rate & Port</span>
+                <span class="conn-detail-val" id="serialBaudPortText">115200 bps &bull; No Port</span>
+              </div>
+              <div class="conn-detail-box">
+                <span class="conn-detail-label">Packets / Integrity</span>
+                <span class="conn-detail-val" id="packetCountText">0 pkts &bull; 0 err</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-footer-note">Protocol: Newline JSON Stream</span>
+            <span id="packetLatencyText">Watchdog: Inactive</span>
+          </div>
+        </article>
+
+        <!-- CARD C: MQ-2 Smoke & Combustible Gas -->
+        <article class="card" id="cardMq2">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon-wrap" style="color: #f59e0b;">
+                <img src="static/assets/icons/flame.svg" width="18" height="18" alt="">
+              </div>
+              <h2 class="card-title">MQ-2 Smoke & Gas</h2>
+            </div>
+            <span class="card-status-pill pill-offline" id="mq2StatusPill">N/A</span>
+          </div>
+          <div class="card-body">
+            <div class="telemetry-primary">
+              <span class="telemetry-num" id="mq2Val">--</span>
+              <span class="telemetry-unit">Level</span>
+            </div>
+            <div class="telemetry-secondary">
+              <span>Analog Voltage:</span>
+              <span class="telemetry-subval" id="mq2VoltVal">-- V</span>
+            </div>
+            <div class="telemetry-progress-track">
+              <div class="telemetry-progress-bar bar-safe" id="mq2ProgressBar" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-footer-note">Pin A0 &bull; Smoke & Hydrocarbon</span>
+            <span id="mq2ThresholdNote">Warn: 380 | Crit: 580</span>
+          </div>
+        </article>
+
+        <!-- CARD D: MQ-135 General Air Quality & Toxic Gas -->
+        <article class="card" id="cardMq135">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon-wrap" style="color: #06b6d4;">
+                <img src="static/assets/icons/wind.svg" width="18" height="18" alt="">
+              </div>
+              <h2 class="card-title">MQ-135 Air Quality</h2>
+            </div>
+            <span class="card-status-pill pill-offline" id="mq135StatusPill">N/A</span>
+          </div>
+          <div class="card-body">
+            <div class="telemetry-primary">
+              <span class="telemetry-num" id="mq135Val">--</span>
+              <span class="telemetry-unit">Level</span>
+            </div>
+            <div class="telemetry-secondary">
+              <span>Analog Voltage:</span>
+              <span class="telemetry-subval" id="mq135VoltVal">-- V</span>
+            </div>
+            <div class="telemetry-progress-track">
+              <div class="telemetry-progress-bar bar-safe" id="mq135ProgressBar" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-footer-note">Pin A1 &bull; Air Quality & Toxic Gas</span>
+            <span id="mq135ThresholdNote">Warn: 320 | Crit: 520</span>
+          </div>
+        </article>
+
+        <!-- CARD E: Temperature (DHT22) -->
+        <article class="card" id="cardTemp">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon-wrap" style="color: #ef4444;">
+                <img src="static/assets/icons/thermometer.svg" width="18" height="18" alt="">
+              </div>
+              <h2 class="card-title">Cabin Temperature</h2>
+            </div>
+            <span class="card-status-pill pill-offline" id="tempStatusPill">N/A</span>
+          </div>
+          <div class="card-body">
+            <div class="telemetry-primary">
+              <span class="telemetry-num" id="tempVal">--</span>
+              <span class="telemetry-unit" id="tempUnit">°C</span>
+            </div>
+            <div class="telemetry-secondary">
+              <span>Fahrenheit equivalent:</span>
+              <span class="telemetry-subval" id="tempFahrVal">-- °F</span>
+            </div>
+            <div class="telemetry-progress-track">
+              <div class="telemetry-progress-bar bar-safe" id="tempProgressBar" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-footer-note">DHT22 Digital Pin D2</span>
+            <span id="tempMinMax">Min: -- | Max: --</span>
+          </div>
+        </article>
+
+        <!-- CARD F: Humidity (DHT22) -->
+        <article class="card" id="cardHum">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon-wrap" style="color: #38bdf8;">
+                <img src="static/assets/icons/droplet.svg" width="18" height="18" alt="">
+              </div>
+              <h2 class="card-title">Cabin Humidity</h2>
+            </div>
+            <span class="card-status-pill pill-offline" id="humStatusPill">N/A</span>
+          </div>
+          <div class="card-body">
+            <div class="telemetry-primary">
+              <span class="telemetry-num" id="humVal">--</span>
+              <span class="telemetry-unit">% RH</span>
+            </div>
+            <div class="telemetry-secondary">
+              <span>Comfort Assessment:</span>
+              <span class="telemetry-subval" id="humComfortVal">Pending data</span>
+            </div>
+            <div class="telemetry-progress-track">
+              <div class="telemetry-progress-bar bar-safe" id="humProgressBar" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-footer-note">DHT22 Relative Humidity</span>
+            <span id="humMinMax">Min: -- | Max: --</span>
+          </div>
+        </article>
+
+        <!-- CARD H: Active Sensors & Hardware Health -->
+        <article class="card" id="cardSensors" style="grid-column: span 2;">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon-wrap">
+                <img src="static/assets/icons/cpu.svg" width="18" height="18" alt="">
+              </div>
+              <h2 class="card-title">Sensor Bus Channels &amp; Pin Assignment</h2>
+            </div>
+            <span class="card-status-pill pill-safe" id="sensorHealthPill">STANDBY</span>
+          </div>
+          <div class="card-body">
+            <ul style="list-style: none; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; font-size: 0.8rem;">
+              <li style="display: flex; justify-content: space-between; padding: 0.4rem 0.6rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+                <span style="color: var(--text-secondary);">MQ-2 Gas (A0):</span>
+                <strong id="hwSensorMq2" style="font-family: var(--font-mono); color: var(--text-muted);">Standby</strong>
+              </li>
+              <li style="display: flex; justify-content: space-between; padding: 0.4rem 0.6rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+                <span style="color: var(--text-secondary);">MQ-135 Air Quality (A1):</span>
+                <strong id="hwSensorMq135" style="font-family: var(--font-mono); color: var(--text-muted);">Standby</strong>
+              </li>
+              <li style="display: flex; justify-content: space-between; padding: 0.4rem 0.6rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+                <span style="color: var(--text-secondary);">DHT22 Temp/RH (D2):</span>
+                <strong id="hwSensorDht" style="font-family: var(--font-mono); color: var(--text-muted);">Standby</strong>
+              </li>
+              <li style="display: flex; justify-content: space-between; padding: 0.4rem 0.6rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+                <span style="color: var(--text-secondary);">SSD1306 OLED (I2C):</span>
+                <strong id="hwSensorOled" style="font-family: var(--font-mono); color: var(--text-muted);">Standby</strong>
+              </li>
+            </ul>
+          </div>
+          <div class="card-footer">
+            <span class="card-footer-note">4 Channels Active</span>
+            <span class="card-status-pill pill-safe" id="activeAlertCountPill">0 ACTIVE</span>
+          </div>
+        </article>
+
+      </div><!-- /cards-grid -->
+    </section>
+
+    <!-- ======================================================================
+         VIEW 2: LIVE TELEMETRY CHARTS
+         ====================================================================== -->
+    <section class="app-view" id="viewTelemetry" style="display: none;" aria-label="Live Telemetry Charts">
+      <div class="charts-section" id="liveMonitoring">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <h2 class="section-title">Live Sensor Telemetry History</h2>
+            <span class="section-badge" id="chartWindowBadge">Rolling 40 Samples</span>
+          </div>
+          <div class="section-actions">
+            <label for="chartWindowSelect" style="font-size: 0.8rem; color: var(--text-secondary); margin-right: 0.25rem;">Window:</label>
+            <select id="chartWindowSelect" class="form-select" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+              <option value="20">20 pts</option>
+              <option value="40" selected>40 pts</option>
+              <option value="80">80 pts</option>
+              <option value="150">150 pts</option>
+            </select>
+            <button type="button" class="btn btn-outline" id="clearChartsBtn" title="Clear recorded chart points">
+              <img src="static/assets/icons/refresh.svg" class="btn-icon" alt="">
+              <span>Clear History</span>
+            </button>
           </div>
         </div>
 
-        <!-- Chart 2: MQ-135 Air Quality -->
-        <div class="chart-card">
-          <div class="chart-header">
-            <div class="chart-title-group">
-              <img src="static/assets/icons/wind.svg" width="16" height="16" alt="" style="color: #06b6d4;">
-              <h3 class="chart-title">MQ-135 Air Quality Response (A1)</h3>
+        <div class="charts-grid" id="analytics">
+          <!-- Chart 1: MQ-2 Gas & Smoke -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <div class="chart-title-group">
+                <img src="static/assets/icons/flame.svg" width="16" height="16" alt="" style="color: #f59e0b;">
+                <h3 class="chart-title">MQ-2 Smoke & Gas Response (A0)</h3>
+              </div>
+              <div class="chart-current-val" id="chartMq2Val">-- Level (0.00 V)</div>
             </div>
-            <div class="chart-current-val" id="chartMq135Val">-- Level (0.00 V)</div>
+            <div class="chart-container">
+              <canvas id="chartMq2Canvas"></canvas>
+            </div>
           </div>
-          <div class="chart-container">
-            <canvas id="chartMq135Canvas"></canvas>
-          </div>
-        </div>
 
-        <!-- Chart 3: Temperature -->
-        <div class="chart-card">
-          <div class="chart-header">
-            <div class="chart-title-group">
-              <img src="static/assets/icons/thermometer.svg" width="16" height="16" alt="" style="color: #ef4444;">
-              <h3 class="chart-title">Cabin Temperature History (DHT22)</h3>
+          <!-- Chart 2: MQ-135 Air Quality -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <div class="chart-title-group">
+                <img src="static/assets/icons/wind.svg" width="16" height="16" alt="" style="color: #06b6d4;">
+                <h3 class="chart-title">MQ-135 Air Quality Response (A1)</h3>
+              </div>
+              <div class="chart-current-val" id="chartMq135Val">-- Level (0.00 V)</div>
             </div>
-            <div class="chart-current-val" id="chartTempVal">-- °C</div>
+            <div class="chart-container">
+              <canvas id="chartMq135Canvas"></canvas>
+            </div>
           </div>
-          <div class="chart-container">
-            <canvas id="chartTempCanvas"></canvas>
-          </div>
-        </div>
 
-        <!-- Chart 4: Humidity -->
-        <div class="chart-card">
-          <div class="chart-header">
-            <div class="chart-title-group">
-              <img src="static/assets/icons/droplet.svg" width="16" height="16" alt="" style="color: #38bdf8;">
-              <h3 class="chart-title">Cabin Relative Humidity History (DHT22)</h3>
+          <!-- Chart 3: Temperature -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <div class="chart-title-group">
+                <img src="static/assets/icons/thermometer.svg" width="16" height="16" alt="" style="color: #ef4444;">
+                <h3 class="chart-title">Cabin Temperature History (DHT22)</h3>
+              </div>
+              <div class="chart-current-val" id="chartTempVal">-- °C</div>
             </div>
-            <div class="chart-current-val" id="chartHumVal">-- % RH</div>
+            <div class="chart-container">
+              <canvas id="chartTempCanvas"></canvas>
+            </div>
           </div>
-          <div class="chart-container">
-            <canvas id="chartHumCanvas"></canvas>
+
+          <!-- Chart 4: Humidity -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <div class="chart-title-group">
+                <img src="static/assets/icons/droplet.svg" width="16" height="16" alt="" style="color: #38bdf8;">
+                <h3 class="chart-title">Cabin Relative Humidity History (DHT22)</h3>
+              </div>
+              <div class="chart-current-val" id="chartHumVal">-- % RH</div>
+            </div>
+            <div class="chart-container">
+              <canvas id="chartHumCanvas"></canvas>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ======================================================================
-         Alert History Section
+         VIEW 3: OLED MIRROR ALONE (Dedicated Automotive Screen View)
          ====================================================================== -->
-    <section class="alerts-section" id="alertHistory">
+    <section class="app-view" id="viewOled" style="display: none;" aria-label="SSD1306 OLED Screen Mirror">
       <div class="section-header">
         <div class="section-title-wrap">
-          <h2 class="section-title">Alert & Incident Log</h2>
-          <span class="section-badge" id="alertLogCountBadge">0 Recorded</span>
+          <h2 class="section-title">SSD1306 OLED Display Hardware Mirror</h2>
+          <span class="section-badge" style="background: #e0f2fe; color: #0284c7; border-color: #bae6fd;">128x64 I2C Autonomous Mirror</span>
         </div>
         <div class="section-actions">
-          <button type="button" class="btn btn-outline" id="clearAlertsBtn" title="Clear local alert history log">
-            <span>Clear Log</span>
-          </button>
+          <span class="card-status-pill pill-safe">Direct Sync Active</span>
         </div>
       </div>
 
-      <div class="table-card">
-        <div class="table-responsive">
-          <table class="alerts-table" id="alertsTable">
-            <thead>
-              <tr>
-                <th>Timestamp</th>
-                <th>Severity</th>
-                <th>Sensor / Component</th>
-                <th>Trigger Value</th>
-                <th>Configured Limit</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="alertsTableBody">
-              <tr>
-                <td colspan="7" class="table-empty-state">
-                  No alerts recorded yet. Incidents will appear here when sensor thresholds are crossed.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <div class="oled-view-layout">
+        <!-- Main Physical OLED Bezel & Screen -->
+        <article class="card oled-mirror-card" id="oledMirrorSection">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon-wrap" style="color: #0284c7;">
+                <img src="static/assets/icons/cpu.svg" width="18" height="18" alt="">
+              </div>
+              <h3 class="card-title">Live SSD1306 OLED Physical Cluster</h3>
+            </div>
+            <span class="card-status-pill pill-safe">128x64 I2C (0x3C)</span>
+          </div>
+          <div class="card-body">
+            <!-- OLED Physical Bezel & Display Screen -->
+            <div class="oled-bezel">
+              <div class="oled-screen-display" id="oledDisplay">
+                <div class="oled-header-bar" id="oledHeader">
+                  <span id="oledHeaderTitle">AUTOSENSE</span>
+                  <span id="oledHeaderStatus">[ SAFE  ]</span>
+                </div>
+                <div class="oled-body-lines">
+                  <div class="oled-line" id="oledLineTemp">Temp : 25.0 C (50%)</div>
+                  <div class="oled-line" id="oledLineSmoke">Smoke: 180 (OK)</div>
+                  <div class="oled-line" id="oledLineGas">Gas  : 160 (OK)</div>
+                </div>
+                <div class="oled-footer" id="oledFooter">
+                  <span id="oledFooterText">AIR QUALITY: NORMAL</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-footer-note">Direct visual pixel mirror of physical Arduino SSD1306 display</span>
+            <span>I2C Pins: SDA -&gt; A4 &bull; SCL -&gt; A5</span>
+          </div>
+        </article>
+
+        <!-- Companion OLED Diagnostics and Hardware Info -->
+        <div class="oled-diagnostics-grid">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-icon-wrap" style="color: #0284c7;">
+                  <img src="static/assets/icons/activity.svg" width="16" height="16" alt="">
+                </div>
+                <h4 class="card-title">Autonomous Alarm Logic</h4>
+              </div>
+              <span class="card-status-pill pill-safe">FIRMWARE RUNNING</span>
+            </div>
+            <div class="card-body">
+              <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                The SSD1306 OLED screen operates directly on the Arduino Uno microcontroller independently of any host PC.
+                If smoke or toxic gas concentrations exceed safety limits, the display flashes high-contrast inverted alert text and activates the Pin D8 buzzer.
+              </p>
+            </div>
+            <div class="card-footer">
+              <span class="card-footer-note">Fail-Safe Automotive Architecture</span>
+              <span>Buzzer Pin D8</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-icon-wrap" style="color: #059669;">
+                  <img src="static/assets/icons/shield.svg" width="16" height="16" alt="">
+                </div>
+                <h4 class="card-title">Hardware Bus Specifications</h4>
+              </div>
+              <span class="card-status-pill pill-safe">I2C BUS OK</span>
+            </div>
+            <div class="card-body">
+              <div class="conn-details-list">
+                <div class="conn-detail-box">
+                  <span class="conn-detail-label">Display Interface</span>
+                  <span class="conn-detail-val">SSD1306 0.96" OLED (Monochrome)</span>
+                </div>
+                <div class="conn-detail-box">
+                  <span class="conn-detail-label">I2C Address</span>
+                  <span class="conn-detail-val">0x3C (Wire.h Standard)</span>
+                </div>
+                <div class="conn-detail-box">
+                  <span class="conn-detail-label">Refresh Frequency</span>
+                  <span class="conn-detail-val">10 Hz Hardware Screen Scan</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-footer-note">Standard 400kHz Fast-Mode</span>
+              <span>Power: 5.0V / 15mA</span>
+            </div>
+          </div>
         </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         VIEW 4: ALERTS & INCIDENT HISTORY ALONE
+         ====================================================================== -->
+    <section class="app-view" id="viewAlerts" style="display: none;" aria-label="Alerts and History Log">
+      <div class="alerts-section" id="alertHistory">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <h2 class="section-title">Alert & Incident Log</h2>
+            <span class="section-badge" id="alertLogCountBadge">0 Recorded</span>
+          </div>
+          <div class="section-actions">
+            <button type="button" class="btn btn-outline" id="clearAlertsBtn" title="Clear local alert history log">
+              <span>Clear Log</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-responsive">
+            <table class="alerts-table" id="alertsTable">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Severity</th>
+                  <th>Sensor / Component</th>
+                  <th>Trigger Value</th>
+                  <th>Configured Limit</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="alertsTableBody">
+                <tr>
+                  <td colspan="7" class="table-empty-state">
+                    No alerts recorded yet. Incidents will appear here when sensor thresholds are crossed.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Reference Safety Thresholds Card -->
+        <div class="card" style="margin-top: 0.5rem;">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon-wrap" style="color: #0284c7;">
+                <img src="static/assets/icons/settings.svg" width="16" height="16" alt="">
+              </div>
+              <h3 class="card-title">Configured Threshold Reference</h3>
+            </div>
+            <span class="card-status-pill pill-safe">ACTIVE THRESHOLDS</span>
+          </div>
+          <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; font-size: 0.85rem;">
+              <div style="padding: 0.75rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+                <div style="font-weight: 700; color: #f59e0b; margin-bottom: 0.25rem;">MQ-2 Smoke & Gas</div>
+                <div style="color: var(--text-secondary); font-size: 0.8rem;">Warning: <strong>380</strong> | Critical: <strong>580</strong></div>
+              </div>
+              <div style="padding: 0.75rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+                <div style="font-weight: 700; color: #06b6d4; margin-bottom: 0.25rem;">MQ-135 Toxic Gas</div>
+                <div style="color: var(--text-secondary); font-size: 0.8rem;">Warning: <strong>320</strong> | Critical: <strong>520</strong></div>
+              </div>
+              <div style="padding: 0.75rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+                <div style="font-weight: 700; color: #ef4444; margin-bottom: 0.25rem;">Cabin Temperature</div>
+                <div style="color: var(--text-secondary); font-size: 0.8rem;">Warning: <strong>35.0 °C</strong> | Critical: <strong>42.0 °C</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 

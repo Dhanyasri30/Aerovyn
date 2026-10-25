@@ -225,6 +225,7 @@ class AlertManager {
 
     switch (state) {
       case 'CRITICAL':
+        this.banner.style.display = 'flex';
         this.banner.classList.add('state-critical');
         if (this.bannerIcon) this.bannerIcon.src = 'static/assets/icons/alert-triangle.svg';
         if (this.bannerMessage) {
@@ -235,6 +236,7 @@ class AlertManager {
         break;
 
       case 'WARNING':
+        this.banner.style.display = 'flex';
         this.banner.classList.add('state-warning');
         if (this.bannerIcon) this.bannerIcon.src = 'static/assets/icons/alert-triangle.svg';
         if (this.bannerMessage) {
@@ -245,6 +247,7 @@ class AlertManager {
         break;
 
       case 'SENSOR ERROR':
+        this.banner.style.display = 'flex';
         this.banner.classList.add('state-warning');
         if (this.bannerIcon) this.bannerIcon.src = 'static/assets/icons/x-circle.svg';
         if (this.bannerMessage) {
@@ -254,21 +257,10 @@ class AlertManager {
         break;
 
       case 'DEVICE OFFLINE':
-        this.banner.classList.add('state-offline');
-        if (this.bannerIcon) this.bannerIcon.src = 'static/assets/icons/info.svg';
-        if (this.bannerMessage) {
-          this.bannerMessage.textContent = 'Device is offline. Connect Arduino Uno via USB Serial to begin telemetry reception.';
-        }
-        if (this.bannerAckBtn) this.bannerAckBtn.style.display = 'none';
-        break;
-
       case 'SAFE':
       default:
-        this.banner.classList.add('state-safe');
-        if (this.bannerIcon) this.bannerIcon.src = 'static/assets/icons/check-circle.svg';
-        if (this.bannerMessage) {
-          this.bannerMessage.textContent = 'All monitored channels are within configured normal baseline thresholds.';
-        }
+        // Hide the banner completely so no standby box clutters the UI
+        this.banner.style.display = 'none';
         if (this.bannerAckBtn) this.bannerAckBtn.style.display = 'none';
         break;
     }
