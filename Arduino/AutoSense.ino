@@ -40,6 +40,13 @@
 #define PIN_DHT22           2     // DHT22 Digital Temperature & Humidity Data
 #define PIN_BUZZER          8     // Single Local Alarm Buzzer (Pin D8)
 
+// ============================================================================
+// BUZZER HARDWARE TYPE CONFIGURATION
+// ============================================================================
+// Set to 1 if using an Active Buzzer (Standard 2-pin/3-pin module with internal oscillator - beeps with DC 5V)
+// Set to 0 if using a Passive Piezo Buzzer (requires AC frequency / tone())
+#define BUZZER_IS_ACTIVE    1     // 1 = Active Buzzer (Default for 95% of Arduino kits), 0 = Passive Piezo
+
 // OLED Display Configuration (128x64 I2C)
 #define SCREEN_WIDTH        128
 #define SCREEN_HEIGHT       64
@@ -102,12 +109,30 @@ uint8_t serialBufferIdx = 0;
 void readSensors();
 int readSmoothedAnalog(uint8_t pin, uint8_t samples = 4);
 SystemStatus evaluateSafetyStatus();
+void setBuzzerOutput(bool active, unsigned int freq = 2400);
 void updateBuzzer(SystemStatus status);
 void emitSerialTelemetry(SystemStatus status);
 void renderOledDisplay(SystemStatus status);
 void showOledBootScreen();
 void processIncomingSerial();
 void handleCommand(const char* cmd);
+
+// Low-level universal buzzer driver (compatible with Active & Passive buzzers)
+void setBuzzerOutput(bool active, unsigned int freq) {
+  if (active) {
+#if BUZZER_IS_ACTIVE
+    digitalWrite(PIN_BUZZER, HIGH);
+#else
+    tone(PIN_BUZZER, freq);
+#endif
+  } else {
+#if BUZZER_IS_ACTIVE
+    digitalWrite(PIN_BUZZER, LOW);
+#else
+    noTone(PIN_BUZZER);
+#endif
+  }
+}
 
 // ============================================================================
 // 5. SETUP FUNCTION
@@ -123,9 +148,14 @@ void setup() {
   pinMode(PIN_BUZZER, OUTPUT);
 
   // Ensure buzzer is initially silent
-  noTone(PIN_BUZZER);
+  setBuzzerOutput(false);
 
-  // 3. Initialize DHT22 Sensor
+  // 3. Buzzer Startup Self-Test Confirmation Chirp (Instant physical proof buzzer is wired & working)
+  setBuzzerOutput(true, 2400);
+  delay(150);
+  setBuzzerOutput(false);
+
+  // 4. Initialize DHT22 Sensor
   dht.begin();
   currentReadings.mq2Raw = 0;
   currentReadings.mq135Raw = 0;
@@ -133,7 +163,7 @@ void setup() {
   currentReadings.humidity = 50.0f;
   currentReadings.dhtValid = false;
 
-  // 4. Initialize OLED Display (I2C)
+  // 5. Initialize OLED Display (I2C)
   Wire.begin();
   if (display.begin(SSD1306_SWITCHCAPVCC, OLED_I2C_ADDR)) {
     oledAvailable = true;
@@ -143,8 +173,8 @@ void setup() {
     Serial.println(F("{\"event\":\"notice\",\"msg\":\"OLED not detected at 0x3C\"}"));
   }
 
-  // Boot Announcement
-  Serial.println(F("{\"event\":\"boot\",\"device\":\"AutoSense-Uno\",\"fw\":\"1.1.0-buzzer-oled\",\"logic\":\"5V\"}"));
+  // Boot Announcement with buzzer capability confirmed
+  Serial.println(F("{\"event\":\"boot\",\"device\":\"AutoSense-Uno\",\"fw\":\"1.2.0-buzzer-enhanced\",\"buzzer_pin\":8,\"buzzer_type\":\"universal\",\"logic\":\"5V\"}"));
 }
 
 // ============================================================================
@@ -239,23 +269,36 @@ SystemStatus evaluateSafetyStatus() {
 }
 
 // ============================================================================
-// 9. BUZZER CONTROL (Single Buzzer on Pin D8)
+// 9. BUZZER CONTROL (Single Buzzer on Pin D8 - Active & Passive Support)
 // ============================================================================
 void updateBuzzer(SystemStatus status) {
+  unsigned long now = millis();
+
   if (status == STATUS_CRITICAL) {
-    // Pulsing 2.4 kHz audible alarm tone (150ms on / 150ms off)
-    if (millis() - lastBuzzerToggleTime >= 150) {
-      lastBuzzerToggleTime = millis();
+    // Pulsing urgent alarm tone (150ms ON / 150ms OFF)
+    if (now - lastBuzzerToggleTime >= 150) {
+      lastBuzzerToggleTime = now;
       buzzerToneState = !buzzerToneState;
+      setBuzzerOutput(buzzerToneState, 2400);
+    }
+  } else if (status == STATUS_WARNING) {
+    // Warning state: Intermittent caution chirp (80ms beep every 1200ms)
+    // Alerts driver to elevated smoke/gas before critical hazard level
+    unsigned long cycleTime = (now - lastBuzzerToggleTime) % 1200;
+    if (cycleTime < 80) {
+      if (!buzzerToneState) {
+        buzzerToneState = true;
+        setBuzzerOutput(true, 1800);
+      }
+    } else {
       if (buzzerToneState) {
-        tone(PIN_BUZZER, 2400);
-      } else {
-        noTone(PIN_BUZZER);
+        buzzerToneState = false;
+        setBuzzerOutput(false);
       }
     }
   } else {
-    // Safe, Warning, or Sensor Error -> Buzzer stays OFF
-    noTone(PIN_BUZZER);
+    // Safe, Normal, or Sensor Error -> Buzzer stays OFF
+    setBuzzerOutput(false);
     buzzerToneState = false;
   }
 }
@@ -272,6 +315,7 @@ void emitSerialTelemetry(SystemStatus status) {
   bool isSmokeCrit = (currentReadings.mq2Raw >= threshold_mq2_crit);
   bool isGasCrit   = (currentReadings.mq135Raw >= threshold_mq135_crit);
   bool isTempCrit  = (currentReadings.dhtValid && currentReadings.temperature >= threshold_temp_crit);
+  bool isBuzzerOn  = (status == STATUS_CRITICAL || status == STATUS_WARNING);
 
   // Stream formatted JSON directly using F() to conserve ATmega328P 2KB RAM
   Serial.print(F("{\"device\":\"AutoSense-Uno\",\"mq2\":"));
@@ -290,6 +334,8 @@ void emitSerialTelemetry(SystemStatus status) {
   Serial.print(isGasCrit ? F("true") : F("false"));
   Serial.print(F(",\"temp_alert\":"));
   Serial.print(isTempCrit ? F("true") : F("false"));
+  Serial.print(F(",\"buzzer\":"));
+  Serial.print(isBuzzerOn ? F("true") : F("false"));
   Serial.print(F(",\"alarm_type\":\""));
   if (isSmokeCrit && isGasCrit) Serial.print(F("SMOKE_AND_GAS"));
   else if (isSmokeCrit) Serial.print(F("SMOKE"));
@@ -472,6 +518,14 @@ void processIncomingSerial() {
 void handleCommand(const char* cmd) {
   if (strstr(cmd, "\"cmd\":\"ping\"")) {
     Serial.println(F("{\"event\":\"config_ack\",\"status\":\"PONG\"}"));
+    return;
+  }
+
+  if (strstr(cmd, "\"cmd\":\"test_buzzer\"")) {
+    setBuzzerOutput(true, 2400);
+    delay(250);
+    setBuzzerOutput(false);
+    Serial.println(F("{\"event\":\"test_ack\",\"component\":\"buzzer\",\"status\":\"OK\"}"));
     return;
   }
 

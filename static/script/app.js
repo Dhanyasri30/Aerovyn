@@ -158,6 +158,35 @@ class AutoSenseApp {
       });
     }
 
+    // Hardware Buzzer Diagnostic Test Button
+    const testBuzzerBtn = document.getElementById('testBuzzerBtn');
+    if (testBuzzerBtn) {
+      testBuzzerBtn.addEventListener('click', () => {
+        // 1. If physical Arduino is connected via Web Serial, send test command
+        if (this.serial && this.serial.isConnected) {
+          this.serial.write('{"cmd":"test_buzzer"}\n');
+        }
+        // 2. Play acoustic test tone in browser
+        if (this.alertManager) {
+          this.alertManager._playBeep();
+        }
+        // 3. Briefly pulse visual hardware mirror
+        const hwBuzzer = document.getElementById('hwBuzzer');
+        const hwBuzzerLabel = document.getElementById('hwBuzzerLabel');
+        const hwSensorBuzzer = document.getElementById('hwSensorBuzzer');
+        if (hwBuzzer) {
+          hwBuzzer.className = 'hw-led-dot active-buzzer';
+          if (hwBuzzerLabel) hwBuzzerLabel.textContent = 'D8 Buzzer (Test Ping...)';
+          if (hwSensorBuzzer) hwSensorBuzzer.textContent = 'Test Active (250ms)';
+          setTimeout(() => {
+            hwBuzzer.className = 'hw-led-dot';
+            if (hwBuzzerLabel) hwBuzzerLabel.textContent = 'D8 Buzzer (Ready)';
+            if (hwSensorBuzzer) hwSensorBuzzer.textContent = 'Ready (Pin D8)';
+          }, 800);
+        }
+      });
+    }
+
     // Quick Simulation Scenario Buttons (Immediate Alarm Demonstrations)
     const scenarioBtns = document.querySelectorAll('[data-scenario]');
     scenarioBtns.forEach(btn => {

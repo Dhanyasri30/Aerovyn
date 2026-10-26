@@ -43,6 +43,7 @@ class DashboardController {
       lastHeartbeatTime: document.getElementById('lastHeartbeatTime'),
       hwOledStatus: document.getElementById('hwOledStatus'),
       hwBuzzer: document.getElementById('hwBuzzer'),
+      hwBuzzerLabel: document.getElementById('hwBuzzerLabel'),
 
       // Card B: Arduino Connection
       serialStatePill: document.getElementById('serialStatePill'),
@@ -85,6 +86,7 @@ class DashboardController {
       hwSensorMq135: document.getElementById('hwSensorMq135'),
       hwSensorDht: document.getElementById('hwSensorDht'),
       hwSensorOled: document.getElementById('hwSensorOled'),
+      hwSensorBuzzer: document.getElementById('hwSensorBuzzer'),
 
       // Live OLED Display Hardware Mirror
       oledHeaderTitle: document.getElementById('oledHeaderTitle'),
@@ -285,7 +287,7 @@ class DashboardController {
     let greenActive = true;
     let yellowActive = false;
     let redActive = false;
-    let buzzerActive = false;
+    let buzzerState = 'off';
 
     if (status === 'CRITICAL') {
       pillClass = 'pill-crit';
@@ -294,15 +296,15 @@ class DashboardController {
       greenActive = false;
       yellowActive = false;
       redActive = true;
-      buzzerActive = true;
+      buzzerState = 'critical';
     } else if (status === 'WARNING') {
       pillClass = 'pill-warn';
       label = 'WARNING';
-      desc = 'Elevated air contaminants or rising temperature detected. OLED warning indicator active.';
+      desc = 'Elevated air contaminants or rising temperature detected. OLED warning and intermittent buzzer active.';
       greenActive = false;
       yellowActive = true;
       redActive = false;
-      buzzerActive = false;
+      buzzerState = 'warning';
     } else if (status === 'SENSOR ERROR') {
       pillClass = 'pill-warn';
       label = 'SENSOR ERROR';
@@ -310,7 +312,7 @@ class DashboardController {
       greenActive = false;
       yellowActive = true;
       redActive = true;
-      buzzerActive = false;
+      buzzerState = 'off';
     }
 
     if (isDemo) {
@@ -336,14 +338,29 @@ class DashboardController {
       this.dom.hwOledStatus.className = 'hw-led-dot active-green';
     }
     if (this.dom.hwBuzzer) {
-      this.dom.hwBuzzer.className = buzzerActive ? 'hw-led-dot active-buzzer' : 'hw-led-dot';
+      if (buzzerState === 'critical') {
+        this.dom.hwBuzzer.className = 'hw-led-dot active-buzzer';
+      } else if (buzzerState === 'warning') {
+        this.dom.hwBuzzer.className = 'hw-led-dot active-buzzer-warn';
+      } else {
+        this.dom.hwBuzzer.className = 'hw-led-dot';
+      }
+    }
+    if (this.dom.hwBuzzerLabel) {
+      if (buzzerState === 'critical') {
+        this.dom.hwBuzzerLabel.textContent = 'D8 Buzzer (Critical Alarm)';
+      } else if (buzzerState === 'warning') {
+        this.dom.hwBuzzerLabel.textContent = 'D8 Buzzer (Warning Beep)';
+      } else {
+        this.dom.hwBuzzerLabel.textContent = 'D8 Buzzer (Ready)';
+      }
     }
   }
 
   _updateSensorHealth(packet) {
     if (this.dom.sensorHealthPill) {
       this.dom.sensorHealthPill.className = 'card-status-pill pill-safe';
-      this.dom.sensorHealthPill.textContent = 'ALL 4 ONLINE';
+      this.dom.sensorHealthPill.textContent = 'ALL 5 ONLINE';
     }
     if (this.dom.hwSensorMq2) {
       this.dom.hwSensorMq2.textContent = `${packet.mq2} Level (Active)`;
@@ -360,6 +377,18 @@ class DashboardController {
     if (this.dom.hwSensorOled) {
       this.dom.hwSensorOled.textContent = '128x64 I2C (Rendering)';
       this.dom.hwSensorOled.style.color = '#10b981';
+    }
+    if (this.dom.hwSensorBuzzer) {
+      if (packet.status === 'CRITICAL') {
+        this.dom.hwSensorBuzzer.textContent = 'CRITICAL ALARM (Pin D8)';
+        this.dom.hwSensorBuzzer.style.color = '#ef4444';
+      } else if (packet.status === 'WARNING') {
+        this.dom.hwSensorBuzzer.textContent = 'Warning Chirp (Pin D8)';
+        this.dom.hwSensorBuzzer.style.color = '#f59e0b';
+      } else {
+        this.dom.hwSensorBuzzer.textContent = 'Ready (Pin D8)';
+        this.dom.hwSensorBuzzer.style.color = '#10b981';
+      }
     }
   }
 
@@ -448,13 +477,16 @@ class DashboardController {
     [this.dom.hwOledStatus, this.dom.hwBuzzer].forEach(el => {
       if (el) el.className = 'hw-led-dot';
     });
+    if (this.dom.hwBuzzerLabel) {
+      this.dom.hwBuzzerLabel.textContent = 'D8 Buzzer (Audio Unit)';
+    }
 
     // Reset Sensor Health
     if (this.dom.sensorHealthPill) {
       this.dom.sensorHealthPill.className = 'card-status-pill pill-offline';
       this.dom.sensorHealthPill.textContent = 'OFFLINE';
     }
-    [this.dom.hwSensorMq2, this.dom.hwSensorMq135, this.dom.hwSensorDht, this.dom.hwSensorOled].forEach(el => {
+    [this.dom.hwSensorMq2, this.dom.hwSensorMq135, this.dom.hwSensorDht, this.dom.hwSensorOled, this.dom.hwSensorBuzzer].forEach(el => {
       if (el) {
         el.textContent = 'Disconnected';
         el.style.color = '#94a3b8';

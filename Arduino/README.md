@@ -23,7 +23,11 @@ Everything is bundled in this one file:
 | **DHT22 Temp & Humidity**| DATA | **D2** | 5.0 V Digital I/O | Requires 10kΩ pullup to 5V |
 | **SSD1306 OLED (128x64)**| SDA | **A4** (SDA) | 5.0 V I2C Data | Dedicated Uno I2C data |
 | | SCL | **A5** (SCL) | 5.0 V I2C Clock | Dedicated Uno I2C clock |
-| **Buzzer** | Positive (+)| **D8** | 5.0 V Digital / Tone | Driven with 2.4 kHz pulsing alarm tone on critical alerts |
+| **Buzzer** | Positive (+)| **D8** | 5.0 V Digital / Tone | Universal active/passive support; sounds warning chirp & urgent critical alarm |
+
+> [!TIP]
+> **Active vs. Passive Buzzer Support:**
+> The sketch defaults to `#define BUZZER_IS_ACTIVE 1` (compatible with 95% of 2-pin and 3-pin Arduino starter kit active buzzers). If using a passive piezo buzzer transducer, set `#define BUZZER_IS_ACTIVE 0` at the top of [`AutoSense.ino`](file:///c:/Users/Welcome%20Dhanya/Downloads/AUTO%20AIR/Arduino/AutoSense.ino). A 150ms confirmation beep sounds at startup to confirm wiring.
 
 ---
 

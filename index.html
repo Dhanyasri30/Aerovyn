@@ -180,7 +180,7 @@
               </div>
               <div class="hw-indicator-item">
                 <span class="hw-led-dot" id="hwBuzzer"></span>
-                <span>D8 Buzzer (Audio Unit)</span>
+                <span id="hwBuzzerLabel">D8 Buzzer (Audio Unit)</span>
               </div>
             </div>
           </div>
@@ -372,10 +372,20 @@
                 <span style="color: var(--text-secondary);">SSD1306 OLED (I2C):</span>
                 <strong id="hwSensorOled" style="font-family: var(--font-mono); color: var(--text-muted);">Standby</strong>
               </li>
+              <li style="display: flex; justify-content: space-between; padding: 0.4rem 0.6rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+                <span style="color: var(--text-secondary);">Piezo Buzzer (D8):</span>
+                <strong id="hwSensorBuzzer" style="font-family: var(--font-mono); color: var(--text-muted);">Standby</strong>
+              </li>
+              <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0.6rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
+                <span style="color: var(--text-secondary);">Hardware Test:</span>
+                <button type="button" class="btn btn-outline" id="testBuzzerBtn" title="Send test ping to Arduino Pin D8 Buzzer" style="padding: 0.2rem 0.55rem; font-size: 0.75rem; border-color: #0284c7; color: #0284c7; cursor: pointer; border-radius: 4px; line-height: 1.2;">
+                  <span>Test Buzzer</span>
+                </button>
+              </li>
             </ul>
           </div>
           <div class="card-footer">
-            <span class="card-footer-note">4 Channels Active</span>
+            <span class="card-footer-note">5 Hardware Channels Active (Sensors, OLED &amp; Buzzer)</span>
             <span class="card-status-pill pill-safe" id="activeAlertCountPill">0 ACTIVE</span>
           </div>
         </article>

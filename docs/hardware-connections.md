@@ -25,6 +25,32 @@ This document describes the complete wiring specifications, voltage constraints,
 | **Piezo Buzzer** | Positive (+)| **D8** | Purple | 5.0 V Digital / Tone | 2.4 kHz pulsing acoustic alarm |
 | | Negative (-)| GND Rail | Black | Ground | Common ground |
 
+### 1.1 Buzzer Module Wiring & Type Detection (Active vs. Passive)
+
+There are two primary types of buzzers used in Arduino projects. Understanding which one you have ensures the alarm sounds properly:
+
+1. **Active Buzzer (Most Common - Default in `AutoSense.ino`):**
+   - **How to identify:** Usually has a white or yellow removable sticker on top marked *"REMOVE SEAL AFTER WASHING"*, a black epoxy resin-sealed bottom (green circuit board not visible), and a `+` mark on top.
+   - **How it works:** Contains an internal oscillator. When fed a constant **5V DC voltage (`digitalWrite(D8, HIGH)`)**, it generates a loud, high-pitched tone (approx. 2.3 kHz).
+   - **Common Pitfall:** Calling `tone(8, 2400)` sends an AC square wave that conflicts with the internal oscillator, causing the active buzzer to remain silent or only emit faint clicks! AutoSense firmware includes `BUZZER_IS_ACTIVE 1` to fix this issue automatically.
+   - **3-Pin Active Buzzer Modules:**
+     - `VCC` or `+` &rarr; 5V Rail
+     - `GND` or `-` &rarr; GND Rail
+     - `I/O` or `S` &rarr; **Arduino Pin D8**
+   - **2-Pin Active Buzzers:**
+     - Longer leg (`+`) &rarr; **Arduino Pin D8**
+     - Shorter leg (`-`) &rarr; GND Rail
+
+2. **Passive Piezo Buzzer:**
+   - **How to identify:** Green circuit board visible on the underside, no internal oscillator circuit.
+   - **How it works:** Requires an alternating AC frequency (`tone(8, freq)`).
+   - **Configuration:** If using a passive buzzer, set `#define BUZZER_IS_ACTIVE 0` at the top of [`AutoSense.ino`](file:///c:/Users/Welcome%20Dhanya/Downloads/AUTO%20AIR/Arduino/AutoSense.ino).
+
+3. **Firmware Audio Indicators:**
+   - **Power-On Self-Test (POST):** Emits a 150 ms confirmation chirp immediately upon boot/reset to confirm wiring.
+   - **Warning State:** Intermittent caution chirp (80 ms pulse every 1.2 seconds) when smoke, gas, or temperature rises into warning range.
+   - **Critical State:** Urgent continuous rapid pulsing alarm (150 ms ON / 150 ms OFF).
+
 ---
 
 ## 2. Power Consumption Budget & Power Rail Design

@@ -197,6 +197,8 @@ class AlertManager {
 
         if (state === 'CRITICAL') {
           this._playBeep();
+        } else if (state === 'WARNING') {
+          this._playWarningBeep();
         }
       }
     });
@@ -404,6 +406,36 @@ class AlertManager {
       osc2.stop(ctx.currentTime + 0.32);
     } catch (e) {
       // Audio autoplay policy might prevent sound before user gesture
+    }
+  }
+
+  /**
+   * Gentle warning acoustic chirp for elevated levels
+   */
+  _playWarningBeep() {
+    if (this.isMuted) return;
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+
+      const ctx = new AudioContext();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      // Single caution chirp (1.8 kHz, 90ms)
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1800, ctx.currentTime);
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.09);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.09);
+    } catch (e) {
+      // Audio autoplay policy
     }
   }
 }

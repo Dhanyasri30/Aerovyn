@@ -30,6 +30,7 @@ The Arduino firmware broadcasts one valid, newline-terminated JSON object every 
 | `temperature`| Float | `-40.0` to `85.0` °C | Monitored cabin temperature acquired from the calibrated DHT22 digital sensor. |
 | `humidity` | Float | `0.0` to `100.0` % RH | Relative humidity acquired from the DHT22 digital sensor. |
 | `status` | String | Enum | Operational health state: `"NORMAL"`, `"WARNING"`, `"CRITICAL"`, or `"SENSOR_ERROR"`. |
+| `buzzer` | Boolean | `true` / `false` | Current audible buzzer output state on Arduino Pin D8. |
 
 ### Boot Notification Packet:
 When first powered or reset, the firmware transmits a single boot announcement:
@@ -76,6 +77,16 @@ If parameter ranges or sanity checks fail:
 **Arduino Response:**
 ```json
 {"event":"config_ack","status":"PONG"}
+```
+
+### C. Buzzer Hardware Diagnostic Test Command (`test_buzzer`)
+Sends a diagnostic trigger to sound the Pin D8 buzzer for 250 milliseconds.
+```json
+{"cmd":"test_buzzer"}
+```
+**Arduino Response:**
+```json
+{"event":"test_ack","component":"buzzer","status":"OK"}
 ```
 
 ---
